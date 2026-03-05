@@ -128,3 +128,4 @@
 | 日期 | 变更内容 |
 |------|---------|
 | 2026-03-05 | 架构文档完成，docs 结构初始化，进度追踪建立 |
+| 2026-03-05 | 补全所有缺失文档（local-setup、sql-prompt-guide、frontend-dev、llm-api-config、docker-compose.yml、.env.example），git init 完成首个 commit（a5decc8），开发就绪 |
