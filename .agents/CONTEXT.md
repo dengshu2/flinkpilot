@@ -36,6 +36,7 @@ FlinkPilot 是一个用自然语言驱动 Apache Flink 数据流的 AI Agent 平
 | 后端开发（新增 Tool / API） | [`docs/05-development/backend-dev.md`](../docs/05-development/backend-dev.md) |
 | 前端开发 | [`docs/05-development/frontend-dev.md`](../docs/05-development/frontend-dev.md) |
 | LLM Prompt 调优 | [`docs/05-development/sql-prompt-guide.md`](../docs/05-development/sql-prompt-guide.md) |
+| 测试 / QA / 验收 | [`docs/05-development/testing-plan.md`](../docs/05-development/testing-plan.md) |
 
 ---
 
