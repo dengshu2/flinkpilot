@@ -9,8 +9,9 @@ services:
     ports:
       - "8081:8081"    # Flink Web UI
     volumes:
-      - ./flink-conf:/opt/flink/conf   # 挂载整个 conf 目录（包含 config.yaml）
-      - ./flink-lib:/opt/flink/lib     # Connector JARs（datagen 内置，Kafka/JDBC 在此）
+      - ./flink-conf/config.yaml:/opt/flink/conf/config.yaml   # 只挂载 config.yaml，不覆盖镜像内其他配置
+      # flink-lib 不挂载 /opt/flink/lib！空目录会覆盖镜像内核心 JAR
+      # Week 2+ 需要 JDBC connector 时，将在 backend/Dockerfile 里 COPY 处理
     networks:
       - flinkpilot-net
     healthcheck:
@@ -31,8 +32,8 @@ services:
       flink-jobmanager:
         condition: service_healthy
     volumes:
-      - ./flink-conf:/opt/flink/conf
-      - ./flink-lib:/opt/flink/lib
+      - ./flink-conf/config.yaml:/opt/flink/conf/config.yaml
+      # flink-lib 不挂载 /opt/flink/lib！见 flink-jobmanager 注释
     networks:
       - flinkpilot-net
 
@@ -50,8 +51,8 @@ services:
       flink-jobmanager:
         condition: service_healthy
     volumes:
-      - ./flink-conf:/opt/flink/conf
-      - ./flink-lib:/opt/flink/lib
+      - ./flink-conf/config.yaml:/opt/flink/conf/config.yaml
+      # flink-lib 不挂载 /opt/flink/lib！见 flink-jobmanager 注释
     networks:
       - flinkpilot-net
     healthcheck:
@@ -72,7 +73,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
     ports:
-      - "5432:5432"    # 仅开发时暴露；生产环境移除此行
+      - "5433:5432"    # 宿主机 5433→容器 5432；5432 被其他容器占用故用 5433
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:

@@ -80,3 +80,34 @@ taskmanager:
 ```bash
 docker compose exec flink-jobmanager cat /opt/flink/conf/config.yaml
 ```
+
+---
+
+## ⚠️ Docker Compose 挂载陷阱（必读）
+
+### 陷阱 1：目录挂载会覆盖 /opt/flink/conf/ 内所有文件
+
+`/opt/flink/conf/` 镜像内有 11 个文件（log4j.properties、masters、workers 等），如果用目录挂载：
+
+```yaml
+# ❌ 错误！空的 ./flink-conf/ 目录会覆盖 conf/ 内所有文件
+volumes:
+  - ./flink-conf:/opt/flink/conf
+```
+
+Flink 将因找不到 log4j 等配置而崩溃，报 `Flink distribution jar not found` 的误导性错误。
+
+**正确做法：只挂载单个文件：**
+
+```yaml
+# ✅ 正确：只覆盖 config.yaml，其余文件保留镜像默认
+volumes:
+  - ./flink-conf/config.yaml:/opt/flink/conf/config.yaml
+```
+
+### 陷阱 2：flink-lib 空目录不能挂载到 /opt/flink/lib
+
+`/opt/flink/lib/` 镜像内含 `flink-dist-2.2.0.jar` 等核心 JAR。挂载空的 `./flink-lib/` 会覆盖它们，导致相同的崩溃错误。
+
+- **Week 1（datagen）**：不需要任何挂载，镜像自带 datagen connector
+- **Week 2+（jdbc 等）**：使用自定义 Dockerfile，在镜像层面 COPY JAR，不要用 volumes 覆盖

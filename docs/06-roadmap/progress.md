@@ -1,6 +1,6 @@
 # FlinkPilot 开发进度
 
-> 上次更新：2026-03-05
+> 上次更新：2026-03-05（23:40）
 > 当前阶段：**Phase 1**（Week 1–2，核心链路跑通）
 > 整体进度：架构设计完成，开发尚未启动
 
@@ -10,7 +10,7 @@
 
 | Phase | 名称 | 状态 | 完成度 |
 |-------|------|------|--------|
-| Phase 1 | 核心链路跑通（Week 1–2） | 🔵 进行中 | 0 / 9 任务 |
+| Phase 1 | 核心链路跑通（Week 1–2） | 🔵 进行中 | 6 / 9 任务 |
 | Phase 2 | JAR 打包能力（Week 3–4） | ⚪ 未开始 | — |
 | Phase 3 | 产品化 Web UI（Month 2） | ⚪ 未开始 | — |
 | Phase 4 | 高阶能力（持续迭代） | ⚪ 未开始 | — |
@@ -23,16 +23,16 @@
 
 ### 基础设施准备
 
-- [ ] `flink-conf/config.yaml` 创建并验证（三个 Flink 容器均可正常加载）
-- [ ] `docker-compose.yml` 启动验证（所有服务正常 up）
-- [ ] Flink Web UI 可访问（http://localhost:8081）
-- [ ] SQL Gateway 可访问（http://localhost:8083）
-- [ ] PostgreSQL 连通性验证
+- [x] `flink-conf/config.yaml` 创建并验证（三个 Flink 容器均可正常加载）
+- [x] `docker-compose.yml` 启动验证（所有服务正常 up）
+- [x] Flink Web UI 可访问（http://localhost:8081）
+- [x] SQL Gateway 可访问（http://localhost:8083）
+- [x] PostgreSQL 连通性验证
 
 ### Agent 后端
 
-- [ ] `backend/` 目录初始化（FastAPI + requirements.txt）
-- [ ] LangGraph 图骨架搭建（`backend/agent/graph.py`，含 PostgresSaver 接入）
+- [x] `backend/` 目录初始化（FastAPI + requirements.txt）
+- [x] LangGraph 图骨架搭建（`backend/agent/graph.py`，含 PostgresSaver 接入）
 - [ ] `generate_flink_sql` Tool 实现（调用 LLM，返回 SQL 字符串）
 - [ ] `validate_sql` Tool 实现（EXPLAIN 验证 + 报错信息解析）
 - [ ] `submit_sql_job` Tool 实现（含 Session 失效检测 + 自动重建）
@@ -129,3 +129,4 @@
 |------|---------|
 | 2026-03-05 | 架构文档完成，docs 结构初始化，进度追踪建立 |
 | 2026-03-05 | 补全所有缺失文档（local-setup、sql-prompt-guide、frontend-dev、llm-api-config、docker-compose.yml、.env.example），git init 完成首个 commit（a5decc8），开发就绪 |
+| 2026-03-05 | Phase 1 基础设施全部跑通。修复 docker-compose 两个关键问题：①单文件挂载 config.yaml（避免覆盖镜像默认 conf）；②移除 flink-lib→/opt/flink/lib 空目录挂载（避免覆盖核心 JAR）。Flink 2.2.0 + SQL Gateway + PostgreSQL 15 健康。backend/ 骨架完成：main.py、agent/graph.py（LangGraph 1.0 + PostgresSaver + human-in-the-loop）、agent/tools/flink_tools.py（4 个 Phase 1 Tool）、agent/prompts/system_prompt.md |
