@@ -1,0 +1,109 @@
+services:
+  # ─────────────────────────────────────────────
+  # Flink JobManager
+  # ─────────────────────────────────────────────
+  flink-jobmanager:
+    image: flink:2.2.0-scala_2.12
+    container_name: flink-jobmanager
+    command: jobmanager
+    ports:
+      - "8081:8081"    # Flink Web UI
+    volumes:
+      - ./flink-conf:/opt/flink/conf   # 挂载整个 conf 目录（包含 config.yaml）
+      - ./flink-lib:/opt/flink/lib     # Connector JARs（datagen 内置，Kafka/JDBC 在此）
+    networks:
+      - flinkpilot-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/overview || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ─────────────────────────────────────────────
+  # Flink TaskManager
+  # ─────────────────────────────────────────────
+  flink-taskmanager:
+    image: flink:2.2.0-scala_2.12
+    container_name: flink-taskmanager
+    command: taskmanager
+    depends_on:
+      flink-jobmanager:
+        condition: service_healthy
+    volumes:
+      - ./flink-conf:/opt/flink/conf
+      - ./flink-lib:/opt/flink/lib
+    networks:
+      - flinkpilot-net
+
+  # ─────────────────────────────────────────────
+  # Flink SQL Gateway（Session Mode）
+  # 官方文档：使用与 JobManager 相同镜像，启动 sql-gateway 命令
+  # ─────────────────────────────────────────────
+  flink-sql-gateway:
+    image: flink:2.2.0-scala_2.12
+    container_name: flink-sql-gateway
+    command: sql-gateway.sh start-foreground
+    ports:
+      - "8083:8083"    # SQL Gateway REST API
+    depends_on:
+      flink-jobmanager:
+        condition: service_healthy
+    volumes:
+      - ./flink-conf:/opt/flink/conf
+      - ./flink-lib:/opt/flink/lib
+    networks:
+      - flinkpilot-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8083/v1/info || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ─────────────────────────────────────────────
+  # PostgreSQL（业务数据库 + LangGraph 状态持久化）
+  # ─────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: flinkpilot-db
+    environment:
+      POSTGRES_DB: flinkpilot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+    ports:
+      - "5432:5432"    # 仅开发时暴露；生产环境移除此行
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - flinkpilot-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d flinkpilot"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Agent 后端（FastAPI + LangGraph）
+  # 开发期间注释掉，直接 uvicorn 启动更方便热重载
+  # ─────────────────────────────────────────────
+  # backend:
+  #   build: ./backend
+  #   container_name: flinkpilot-backend
+  #   env_file: .env
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #     flink-sql-gateway:
+  #       condition: service_healthy
+  #   networks:
+  #     - flinkpilot-net
+
+networks:
+  flinkpilot-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
