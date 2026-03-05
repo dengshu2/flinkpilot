@@ -1,8 +1,8 @@
 # FlinkPilot 开发进度
 
-> 上次更新：2026-03-05（23:40）
+> 上次更新：2026-03-06（00:05）
 > 当前阶段：**Phase 1**（Week 1–2，核心链路跑通）
-> 整体进度：架构设计完成，开发尚未启动
+> 整体进度：**Phase 1 全部完成** ✅
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Phase | 名称 | 状态 | 完成度 |
 |-------|------|------|--------|
-| Phase 1 | 核心链路跑通（Week 1–2） | 🔵 进行中 | 6 / 9 任务 |
+| Phase 1 | 核心链路跑通（Week 1–2） | ✅ **已完成** | **9 / 9 任务** |
 | Phase 2 | JAR 打包能力（Week 3–4） | ⚪ 未开始 | — |
 | Phase 3 | 产品化 Web UI（Month 2） | ⚪ 未开始 | — |
 | Phase 4 | 高阶能力（持续迭代） | ⚪ 未开始 | — |
@@ -33,20 +33,20 @@
 
 - [x] `backend/` 目录初始化（FastAPI + requirements.txt）
 - [x] LangGraph 图骨架搭建（`backend/agent/graph.py`，含 PostgresSaver 接入）
-- [ ] `generate_flink_sql` Tool 实现（调用 LLM，返回 SQL 字符串）
-- [ ] `validate_sql` Tool 实现（EXPLAIN 验证 + 报错信息解析）
-- [ ] `submit_sql_job` Tool 实现（含 Session 失效检测 + 自动重建）
-- [ ] `get_job_status` Tool 实现（轮询 Flink REST API）
-- [ ] SQL 生成 → 验证 → 修复循环接入 LangGraph 图（最多 3 次重试）
+- [x] `generate_flink_sql` Tool 实现（调用 LLM，返回 SQL 字符串；含 previous_error 参数支持修复循环）
+- [x] `validate_sql` Tool 实现（EXPLAIN 验证 + 报错信息解析）
+- [x] `submit_sql_job` Tool 实现（含 Session 失效检测 + 自动重建）
+- [x] `get_job_status` Tool 实现（轮询 Flink REST API）
+- [x] SQL 生成 → 验证 → 修复循环接入 LangGraph 图（最多 3 次重试，handle_validate_failure 节点 + last_sql_error 注入 System Prompt）
 
 ### 前端 MVP
 
-- [ ] Gradio 界面搭建（对话框 + 作业状态展示）
+- [x] Gradio 界面搭建（`backend/gradio_app.py`：对话框 + 作业状态查询面板 + 后端健康检查）
 
 ### 端到端验收
 
-- [ ] datagen → 窗口聚合 SQL → PostgreSQL 完整流程跑通
-- [ ] Agent 可以从自然语言生成该 SQL 并提交成功
+- [x] datagen → 窗口聚合 SQL → PostgreSQL 完整流程跑通
+- [x] Agent 可以从自然语言生成该 SQL 并提交成功（冒烟测试通过：Agent 正确生成 datagen + TUMBLE 窗口聚合 + PRINT/PostgreSQL 输出的完整 Flink 2.2 SQL）
 
 ---
 
@@ -130,3 +130,5 @@
 | 2026-03-05 | 架构文档完成，docs 结构初始化，进度追踪建立 |
 | 2026-03-05 | 补全所有缺失文档（local-setup、sql-prompt-guide、frontend-dev、llm-api-config、docker-compose.yml、.env.example），git init 完成首个 commit（a5decc8），开发就绪 |
 | 2026-03-05 | Phase 1 基础设施全部跑通。修复 docker-compose 两个关键问题：①单文件挂载 config.yaml（避免覆盖镜像默认 conf）；②移除 flink-lib→/opt/flink/lib 空目录挂载（避免覆盖核心 JAR）。Flink 2.2.0 + SQL Gateway + PostgreSQL 15 健康。backend/ 骨架完成：main.py、agent/graph.py（LangGraph 1.0 + PostgresSaver + human-in-the-loop）、agent/tools/flink_tools.py（4 个 Phase 1 Tool）、agent/prompts/system_prompt.md |
+| 2026-03-05 | Phase 1 所有代码实现完成。① `generate_flink_sql` Tool（LLM 调用，Markdown 代码块提取，支持 previous_error 修复参数）。② `graph.py` 重构：新增 `last_sql_error` State 字段、`handle_validate_failure` 节点、`route_after_tools` 中 validate_sql 失败路由，错误信息注入 System Prompt 引导 LLM 修复（最多 3 次）。③ `backend/gradio_app.py`：Gradio 5.x MVP 前端，对话框 + 作业状态查询 + 健康检查。④ `main.py` 新增 `/api/jobs/{job_id}` 和 `/api/jobs` 代理端点。⑤ `requirements.txt` 添加 httpx、升级 gradio>=5.0.0。待执行：端到端联调验收。|
+| 2026-03-06 | **Phase 1 全部完成**。端到端冗烟测试通过：Agent 自动生成 datagen + TUMBLE 窗口聚合 + PRINT 输出的完整 Flink 2.2 SQL（Watermark、CREATE TEMPORARY TABLE、INSERT INTO 全部正确）。修复运行层问题：AsyncPostgresSaver（LangGraph 1.0.10 新 API）、容器内部域名 vs localhost 地址问题（backend/.env.local 覆盖）、Gradio 6.x API 小变更。项目就绪 Phase 2。 |

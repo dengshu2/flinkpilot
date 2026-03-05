@@ -11,7 +11,7 @@ FlinkPilot 是一个用自然语言驱动 Apache Flink 数据流的 AI Agent 平
 核心链路：**用户自然语言输入 → LangGraph Agent → Flink SQL 生成/验证/提交 → 结果监控**
 
 **当前进度**：见 [`docs/06-roadmap/progress.md`](../docs/06-roadmap/progress.md)
-**当前阶段**：Phase 1（Week 1–2，核心链路跑通）
+**当前阶段**：Phase 1 ✅ 已完成，准备开始 **Phase 2**（Week 3–4，JAR 打包能力）
 
 ---
 
@@ -102,3 +102,15 @@ flinkpilot/
 - ❌ 不要用旧的 `FLINK_PROPERTIES` 环境变量注入方式，改用 `config.yaml` 挂载
 - ❌ 不要在 `kill_job` 外的高风险操作上跳过 human-in-the-loop 确认
 - ❌ 不要生成 LLM 单次直接提交 SQL 的代码，必须包含验证-修复循环
+- ❌ 不要把多条 SQL 语句合并成一条发送给 SQL Gateway（每次只能发一条，须逐条提交）
+- ❌ 不要把 `generate_flink_sql` 加回 `PHASE1_TOOLS`（会导致双重 LLM 调用使响应超时）
+
+---
+
+## Phase 1 已知问题（待后续 Phase 研究）
+
+| 问题 | 现象 | 建议方向 |
+|------|------|----------|
+| `print` connector stdout 在 Web UI 不可见 | Docker standalone 模式下 Web UI 的 Stdout 选项卡显示 "file does not exist"；实际输出需通过 `docker logs flink-taskmanager` 查看 | 研究 `env.log.dir` / `taskmanager.log.path` Flink 配置；或搜索 "Flink Docker print connector stdout web ui" 有无官方解决方案；长期用 PostgreSQL sink 替代 print |
+| `get_job_id` 竞争条件 | `submit_sql_job` 通过轮询 `/jobs/overview` 取最新 RUNNING 作业，多作业并发时可能拿到错误 job_id | 研究 SQL Gateway operation_handle → Flink job_id 的官方映射接口（`/v1/sessions/{s}/operations/{o}/result` 是否含 jobId 字段）|
+| Session 单点 | SQL Gateway Session 重启后丢失所有 TEMPORARY TABLE，Agent 须重新建表 | Phase 2 评估 Application mode 替代 Session mode |

@@ -6,45 +6,51 @@ FlinkPilot FastAPI 入口
 """
 import json
 import os
+import httpx
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from langgraph.checkpoint.postgres import PostgresSaver
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langchain_core.messages import HumanMessage
 
-load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")      # 项目根 .env（LLM key 等）
+load_dotenv(dotenv_path=Path(__file__).parent / ".env.local", override=True)  # 本地覆盖（localhost 地址）
 
 from agent.graph import build_agent
 
 # ─────────────────────────────────────────────────────────────
 # 应用初始化
 # ─────────────────────────────────────────────────────────────
-_checkpointer: PostgresSaver | None = None
+_checkpointer = None
 _agent = None
+_checkpointer_cm = None  # context manager 引用，保持连接存活
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     应用启动时：
-    1. 初始化 PostgresSaver（psycopg3 连接）
+    1. 初始化 AsyncPostgresSaver（psycopg3 async 连接）
     2. 运行 checkpointer.setup()（自动建表，幂等）
     3. 编译 LangGraph 图
     """
-    global _checkpointer, _agent
+    global _checkpointer, _agent, _checkpointer_cm
 
     db_url = os.environ["DATABASE_URL"]
-    _checkpointer = PostgresSaver.from_conn_string(db_url)
-    _checkpointer.setup()  # 创建 langgraph_checkpoints 等内部表（幂等）
+    _checkpointer_cm = AsyncPostgresSaver.from_conn_string(db_url)
+    _checkpointer = await _checkpointer_cm.__aenter__()
+    await _checkpointer.setup()  # 创建 langgraph_checkpoints 等内部表（幂等）
 
     _agent = build_agent(checkpointer=_checkpointer)
-    print("FlinkPilot Agent 初始化完成")
+    print("✅ FlinkPilot Agent 初始化完成")
 
     yield
 
-    # 清理（PostgresSaver 无需显式关闭）
+    # 关闭连接
+    await _checkpointer_cm.__aexit__(None, None, None)
 
 
 app = FastAPI(
@@ -165,3 +171,37 @@ async def http_chat(body: dict):
         "session_id": session_id,
         "reply": last_msg.content if hasattr(last_msg, "content") else str(last_msg),
     }
+
+
+@app.get("/api/jobs/{job_id}")
+async def get_job(job_id: str):
+    """
+    查询单个 Flink 作业状态（代理转发到 Flink REST API）。
+    Gradio 前端通过此端点查询作业状态，避免直接跨域访问 Flink REST API。
+    """
+    flink_rest_url = os.getenv("FLINK_REST_URL", "http://flink-jobmanager:8081")
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(f"{flink_rest_url}/jobs/{job_id}")
+        resp.raise_for_status()
+        data = resp.json()
+    return {
+        "job_id": job_id,
+        "status": data.get("state", "UNKNOWN"),
+        "name": data.get("name", ""),
+        "start_time": data.get("start-time", 0),
+        "duration": data.get("duration", 0),
+    }
+
+
+@app.get("/api/jobs")
+async def list_jobs():
+    """
+    列出所有 Flink 作业（代理转发到 Flink REST API）。
+    """
+    flink_rest_url = os.getenv("FLINK_REST_URL", "http://flink-jobmanager:8081")
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(f"{flink_rest_url}/jobs/overview")
+        resp.raise_for_status()
+        data = resp.json()
+    return {"jobs": data.get("jobs", [])}
+
