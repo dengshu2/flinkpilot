@@ -52,7 +52,7 @@ def send_message(message: str, session_id: str, history: list) -> tuple[list, st
             data = resp.json()
             reply = data.get("reply", "（Agent 无回复）")
     except httpx.ConnectError:
-        reply = "连接失败：请确认后端服务已启动（`uvicorn main:app --port 8000`）。"
+        reply = "连接失败：请确认后端服务已启动（`uv run uvicorn main:app --port 8000`）。"
     except httpx.TimeoutException:
         reply = "请求超时（5 分钟）：Agent 链路耗时过长，请稍后重试，或简化你的需求描述。"
     except Exception as e:

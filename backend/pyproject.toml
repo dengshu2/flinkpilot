@@ -1,0 +1,17 @@
+[project]
+name = "flinkpilot-backend"
+version = "0.1.0"
+description = "FlinkPilot Agent 后端 — 自然语言驱动 Apache Flink 数据流"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.135.1",
+    "gradio>=5.0.0",
+    "httpx>=0.27.0",
+    "langchain-openai>=0.3.0",
+    "langgraph>=1.0.0",
+    "langgraph-checkpoint-postgres>=2.0.0",
+    "psycopg[binary]>=3.1.0",
+    "python-dotenv>=1.2.2",
+    "requests>=2.32.5",
+    "uvicorn[standard]>=0.41.0",
+]

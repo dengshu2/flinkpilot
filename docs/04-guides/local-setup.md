@@ -11,7 +11,7 @@
 |------|---------|---------|
 | Docker | 24.x | `docker --version` |
 | Docker Compose | v2.x（`docker compose` 命令，非旧版 `docker-compose`） | `docker compose version` |
-| Python | 3.11+ | `python --version` |
+| uv | 0.5+ | `uv --version` |
 | 可用内存 | 4 GB（最低 2 GB） | `free -h` |
 
 ---
@@ -133,19 +133,10 @@ docker compose exec db psql -U postgres -d flinkpilot -c "SELECT 1;"
 
 ```bash
 cd backend
-pip install -r requirements.txt
-
-# 初次运行需初始化 LangGraph checkpoint 表
-python -c "
-from langgraph.checkpoint.postgres import PostgresSaver
-import os
-checkpointer = PostgresSaver.from_conn_string(os.environ['DATABASE_URL'])
-checkpointer.setup()
-print('DB initialized')
-"
+uv sync
 
 # 热重载模式启动
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ---
@@ -154,7 +145,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ```bash
 cd backend
-python gradio_app.py   # Phase 1 MVP 前端
+uv run python gradio_app.py   # Phase 1 MVP 前端
 ```
 
 打开 `http://localhost:7860` 即可使用。

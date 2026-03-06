@@ -11,11 +11,11 @@ Phase 1 的目标是用最少时间验证 Agent 核心链路，前端选用 Grad
 
 ### 安装
 
-Gradio 已在 `requirements.txt` 中：
+Gradio 已在 `pyproject.toml` 中：
 
 ```bash
-# 在 backend/requirements.txt 中添加
-gradio>=5.0.0
+# 如需手动添加（已包含在项目依赖中）
+uv add gradio
 ```
 
 ### Phase 1 最小化前端

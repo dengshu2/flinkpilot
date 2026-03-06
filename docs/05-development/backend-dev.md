@@ -1,6 +1,6 @@
 # 后端开发指南
 
-> 上次更新：2026-03-05
+> 上次更新：2026-03-06
 > 适用阶段：Phase 1-2
 
 ---
@@ -8,25 +8,39 @@
 ## 环境要求
 
 - Python 3.11+
+- [uv](https://docs.astral.sh/uv/)（Python 包管理器）
 - Docker & Docker Compose
 
-## 依赖安装
+## 依赖管理
+
+项目使用 [uv](https://docs.astral.sh/uv/) 管理 Python 依赖，配置在 `backend/pyproject.toml` 中。
 
 ```bash
 cd backend
-pip install -r requirements.txt
+
+# 安装所有依赖（根据 uv.lock 精确安装）
+uv sync
+
+# 添加新依赖
+uv add <package-name>
+
+# 添加开发依赖
+uv add --dev <package-name>
 ```
 
-### requirements.txt
+### 核心依赖
 
-```
-langgraph>=1.0.0
-langchain-openai>=0.3.0
-fastapi
-uvicorn
-psycopg[binary]>=3.1.0   # psycopg3，不是 psycopg2-binary
-requests
-```
+| 包名 | 版本要求 | 说明 |
+|------|---------|------|
+| `langgraph` | >=1.0.0 | Agent 框架（Durable State API） |
+| `langgraph-checkpoint-postgres` | >=2.0.0 | LangGraph PostgreSQL 持久化 |
+| `langchain-openai` | >=0.3.0 | OpenAI 兼容 LLM 调用 |
+| `fastapi` | >=0.135.1 | Web 框架 |
+| `uvicorn[standard]` | >=0.41.0 | ASGI 服务器 |
+| `psycopg[binary]` | >=3.1.0 | psycopg3（不是 psycopg2-binary） |
+| `httpx` | >=0.27.0 | 异步 HTTP 客户端 |
+| `gradio` | >=5.0.0 | Phase 1 MVP 前端 |
+| `python-dotenv` | >=1.2.2 | 环境变量加载 |
 
 > ⚠️ 必须使用 `psycopg[binary]>=3.1.0`（psycopg3）。LangGraph 1.0 的 `PostgresSaver` 依赖 psycopg3，使用 `psycopg2-binary` 会导致运行时错误。
 
@@ -40,7 +54,7 @@ docker compose up -d db
 
 # 开发模式启动（热重载）
 cd backend
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ---
