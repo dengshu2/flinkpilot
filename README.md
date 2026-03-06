@@ -2,6 +2,8 @@
 
 用自然语言驱动 Apache Flink 数据流的 AI Agent 平台。
 
+![FlinkPilot 工作流程概览](./docs/assets/flinkpilot-overview.png)
+
 ```
 你说：  帮我生成随机订单数据，按 10 秒窗口统计各城市 GMV，结果输出到控制台
 Agent：  理解意图 → 生成 SQL → EXPLAIN 验证 → 提交作业 → 返回 Job ID
