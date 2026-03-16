@@ -7,7 +7,7 @@ services:
     container_name: flink-jobmanager
     command: jobmanager
     ports:
-      - "8081:8081"    # Flink Web UI
+      - "127.0.0.1:8081:8081"    # Flink Web UI（仅内网访问）
     volumes:
       - ./flink-conf/config.yaml:/opt/flink/conf/config.yaml   # 只挂载 config.yaml，不覆盖镜像内其他配置
       # flink-lib 不挂载 /opt/flink/lib！空目录会覆盖镜像内核心 JAR
@@ -46,7 +46,7 @@ services:
     container_name: flink-sql-gateway
     command: sql-gateway.sh start-foreground
     ports:
-      - "8083:8083"    # SQL Gateway REST API
+      - "127.0.0.1:8083:8083"    # SQL Gateway REST API（仅内网访问）
     depends_on:
       flink-jobmanager:
         condition: service_healthy
@@ -73,7 +73,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
     ports:
-      - "5433:5432"    # 宿主机 5433→容器 5432；5432 被其他容器占用故用 5433
+      - "127.0.0.1:5433:5432"    # 宿主机 5433→容器 5432；仅内网访问
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
